@@ -1,0 +1,124 @@
+# Quantum-Resistant Nano-Messenger - Testing Configuration
+# Session 8: Production Hardening
+
+[server]
+bind_address = "127.0.0.1"
+api_port = 8081                        # Different port for testing
+websocket_port = 8444
+worker_threads = 2
+max_connections = 50
+connection_timeout_seconds = 10       # Fast timeouts for tests
+keep_alive_seconds = 30
+tls_cert_path = "./test/certs/test-cert.pem"
+tls_key_path = "./test/certs/test-key.pem"
+server_name = "nano-messenger-test"
+environment = "Testing"
+
+[security]
+minimum_crypto_mode = "classical"     # Fast crypto for tests
+require_post_quantum = false
+max_message_age_seconds = 60
+
+[security.rate_limiting]
+max_messages_per_minute = 10000       # Very high for tests
+max_connections_per_ip = 1000
+burst_allowance = 5000
+ban_duration_minutes = 1
+
+[security.key_rotation]
+automatic_rotation = false
+rotation_interval_days = 1            # Daily for testing
+emergency_rotation_enabled = true
+pre_rotation_notification_hours = 1
+
+[security.access_control]
+require_authentication = true
+session_timeout_minutes = 30
+max_failed_attempts = 3
+lockout_duration_minutes = 1          # Short lockout for tests
+require_mfa = false
+
+[security.threat_detection]
+enabled = true                        # Test threat detection
+anomaly_detection = false
+ip_reputation_checking = false
+behavioral_analysis = false
+
+[database]
+database_type = "SQLite"
+connection_string = ":memory:"         # In-memory database for tests
+max_connections = 1
+connection_timeout_seconds = 5
+query_timeout_seconds = 10
+ssl_required = false
+backup_enabled = false
+encryption_at_rest = false
+
+[logging]
+level = "Trace"                       # Maximum verbosity for tests
+structured_logging = true
+audit_log_path = "./test/logs/audit.log"
+error_log_path = "./test/logs/error.log"
+access_log_path = "./test/logs/access.log"
+
+[logging.log_rotation]
+max_size_mb = 1
+max_files = 2
+rotation_schedule = "Size"
+compression_enabled = false
+
+[monitoring]
+metrics_enabled = true
+metrics_port = 9091                    # Different port for testing
+health_check_interval_seconds = 5     # Fast health checks
+
+[monitoring.alert_thresholds]
+cpu_usage_percent = 99.0              # High thresholds for tests
+memory_usage_percent = 99.0
+disk_usage_percent = 99.0
+error_rate_percent = 50.0
+response_time_ms = 10000
+
+[compliance]
+gdpr_enabled = true                   # Test compliance features
+hipaa_enabled = true
+sox_enabled = true
+data_retention_days = 1              # Minimal retention
+audit_logging_enabled = true
+data_encryption_required = true
+breach_notification_enabled = true
+
+[compliance.privacy_controls]
+data_minimization = true
+purpose_limitation = true
+storage_limitation = true
+accuracy_controls = true
+security_controls = true
+accountability_measures = true
+
+[performance]
+enable_caching = true
+cache_size_mb = 16                   # Small cache for tests
+cache_ttl_seconds = 60
+connection_pooling = true
+async_processing = true
+
+[performance.batch_processing]
+enabled = true
+batch_size = 5                       # Small batches for tests
+batch_timeout_ms = 100
+max_concurrent_batches = 2
+
+[performance.resource_limits]
+max_memory_mb = 512
+max_cpu_percent = 95.0
+max_file_descriptors = 256
+max_network_connections = 50
+
+[backup]
+enabled = false                      # No backups needed for tests
+backup_interval_hours = 1
+retention_days = 1
+backup_location = "./test/backups"
+encryption_enabled = false
+compression_enabled = false

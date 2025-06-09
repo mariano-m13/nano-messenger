@@ -1,23 +1,21 @@
 #!/bin/bash
 
-echo "🔧 Testing nano-messenger build..."
-echo
+echo "🔧 Session 2: Post-Quantum Build Test"
+echo "====================================="
 
-# Clean previous build artifacts
-echo "🧹 Cleaning previous build..."
-cargo clean
+cd /Users/mariano/Desktop/Code/nano-messenger
 
-echo
-echo "📦 Updating dependencies..."
-cargo update
+# Clear previous builds
+echo "🧹 Cleaning previous builds..."
+cargo clean > /dev/null 2>&1
 
-echo
-echo "🔍 Checking code compilation..."
-cargo check
+# Check compilation
+echo "🔍 Checking compilation..."
+cargo check --lib 2>&1 | head -30
 
-echo
-echo "🏗️ Building project..."
-cargo build
+echo ""
+echo "🏗️ Attempting to build..."
+cargo build --lib 2>&1 | head -30
 
-echo
-echo "✅ Build test complete!"
+echo ""
+echo "✅ Build test complete"

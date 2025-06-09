@@ -1,0 +1,1 @@
+#!/bin/bash\n\necho \"🚀 Running Crypto Fixes Test\"\necho \"============================\"\n\ncd /Users/mariano/Desktop/Code/nano-messenger\n\necho \"Building and running crypto fixes test...\"\ncargo run --example test_crypto_fixes\n\necho \"\"\necho \"Done!\"

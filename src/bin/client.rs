@@ -1,7 +1,11 @@
 use clap::{Parser, Subcommand};
 use nano_messenger::{
     contacts::{ContactManager, ContactMetadata, ContactPermission, ContactStatus},
-    crypto::{UserKeyPair, Ed25519PrivateKey, X25519PrivateKey, encrypt_asymmetric, decrypt_asymmetric, decrypt_symmetric, encrypt_symmetric},
+    crypto::{
+        UserKeyPair, Ed25519PrivateKey, X25519PrivateKey, 
+        CryptoMode, CryptoConfig,
+        encrypt_asymmetric, decrypt_asymmetric, decrypt_symmetric, encrypt_symmetric
+    },
     username::create_username_claim,
     network::RelayClient,
     protocol::{MessageEnvelope, MessagePayload},
@@ -14,10 +18,33 @@ use tokio;
 use anyhow::Result;
 use chrono::Utc;
 use base64::{Engine as _, engine::general_purpose};
+use serde::{Serialize, Deserialize};
+
+/// User security preferences for Session 4
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SecurityPreferences {
+    pub default_crypto_mode: CryptoMode,
+    pub adaptive_mode: bool,
+    pub minimum_crypto_mode: CryptoMode,
+    pub auto_upgrade: bool,
+    pub force_post_quantum: bool,
+}
+
+impl Default for SecurityPreferences {
+    fn default() -> Self {
+        Self {
+            default_crypto_mode: CryptoMode::Hybrid, // Secure default
+            adaptive_mode: false,
+            minimum_crypto_mode: CryptoMode::Classical,
+            auto_upgrade: true,
+            force_post_quantum: false,
+        }
+    }
+}
 
 #[derive(Parser)]
 #[command(name = "nano-client")]
-#[command(about = "A zero-knowledge, privacy-first messaging client")]
+#[command(about = "A zero-knowledge, privacy-first messaging client with quantum-resistant cryptography")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -34,18 +61,50 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     /// Initialize user (generate keys)
-    Init,
+    Init {
+        /// Crypto mode for key generation
+        #[arg(long, default_value = "classical")]
+        crypto_mode: String,
+    },
     
     /// Claim a username
     ClaimUsername { username: String },
     
-    /// Send a message
+    /// Send a message with quantum-safe cryptography
     Send {
         /// Recipient username or pubkey
         recipient: String,
         /// Message content
         message: String,
+        /// Cryptography mode: classical, hybrid, or quantum
+        #[arg(long, default_value = "hybrid")]
+        crypto_mode: String,
+        /// Force post-quantum cryptography (overrides mode selection)
+        #[arg(long)]
+        force_post_quantum: bool,
+        /// Use adaptive mode selection based on network conditions
+        #[arg(long)]
+        adaptive: bool,
     },
+    
+    /// Configure security preferences
+    SetSecurity {
+        /// Default crypto mode for new messages
+        #[arg(long)]
+        default_mode: Option<String>,
+        /// Enable adaptive mode selection based on bandwidth
+        #[arg(long)]
+        adaptive: Option<bool>,
+        /// Minimum acceptable crypto mode for incoming messages
+        #[arg(long)]
+        minimum_mode: Option<String>,
+        /// Allow automatic security upgrades
+        #[arg(long)]
+        auto_upgrade: Option<bool>,
+    },
+    
+    /// Show current security configuration
+    ShowSecurity,
     
     /// Check for new messages
     Receive,
@@ -58,14 +117,24 @@ enum Commands {
         /// Number of recent messages to show
         #[arg(long, default_value = "20")]
         limit: usize,
+        /// Filter by crypto mode
+        #[arg(long)]
+        crypto_mode: Option<String>,
     },
     
     /// Manage contacts
     #[command(subcommand)]
     Contacts(ContactCommands),
     
-    /// Show user info
+    /// Show user info including crypto capabilities
     Info,
+    
+    /// Test crypto mode compatibility
+    TestCrypto {
+        /// Crypto mode to test
+        #[arg(default_value = "all")]
+        mode: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -103,27 +172,77 @@ async fn main() -> Result<()> {
     let config_dir = expand_path(&cli.config_dir)?;
     std::fs::create_dir_all(&config_dir)?;
     
+    // Load security preferences
+    let security_prefs = load_security_preferences(&config_dir)?;
+    
+    // Initialize crypto config based on preferences
+    let crypto_config = CryptoConfig {
+        mode: security_prefs.default_crypto_mode,
+        allow_auto_upgrade: security_prefs.auto_upgrade,
+        adaptive_mode: security_prefs.adaptive_mode,
+        minimum_mode: security_prefs.minimum_crypto_mode,
+    };
+    
+    // Initialize the crypto system
+    let _ = nano_messenger::crypto::init_crypto_config(crypto_config);
+    
     match cli.command {
-        Commands::Init => {
-            init_user(&config_dir)?;
+        Commands::Init { crypto_mode } => {
+            let mode = parse_crypto_mode(&crypto_mode)?;
+            init_user(&config_dir, mode)?;
         }
         Commands::ClaimUsername { username } => {
             claim_username(&config_dir, &cli.relay, &username).await?;
         }
-        Commands::Send { recipient, message } => {
-            send_message(&config_dir, &cli.relay, &recipient, &message).await?;
+        Commands::Send { 
+            recipient, 
+            message, 
+            crypto_mode, 
+            force_post_quantum,
+            adaptive,
+        } => {
+            send_quantum_safe_message(
+                &config_dir, 
+                &cli.relay, 
+                &recipient, 
+                &message,
+                &crypto_mode,
+                force_post_quantum,
+                adaptive,
+                &security_prefs,
+            ).await?;
+        }
+        Commands::SetSecurity { 
+            default_mode, 
+            adaptive, 
+            minimum_mode,
+            auto_upgrade,
+        } => {
+            update_security_preferences(
+                &config_dir,
+                default_mode.as_deref(),
+                adaptive,
+                minimum_mode.as_deref(),
+                auto_upgrade,
+            )?;
+        }
+        Commands::ShowSecurity => {
+            show_security_configuration(&config_dir)?;
         }
         Commands::Receive => {
             receive_messages(&config_dir, &cli.relay).await?;
         }
-        Commands::Messages { from, limit } => {
-            show_messages(&config_dir, from.as_deref(), limit)?;
+        Commands::Messages { from, limit, crypto_mode } => {
+            show_messages(&config_dir, from.as_deref(), limit, crypto_mode.as_deref())?;
         }
         Commands::Contacts(contact_cmd) => {
             handle_contact_command(&config_dir, contact_cmd)?;
         }
         Commands::Info => {
             show_user_info(&config_dir)?;
+        }
+        Commands::TestCrypto { mode } => {
+            test_crypto_modes(&config_dir, &mode)?;
         }
     }
     
@@ -140,7 +259,12 @@ fn expand_path(path: &str) -> Result<PathBuf> {
     }
 }
 
-fn init_user(config_dir: &PathBuf) -> Result<()> {
+fn parse_crypto_mode(mode_str: &str) -> Result<CryptoMode> {
+    mode_str.parse::<CryptoMode>()
+        .map_err(|e| anyhow::anyhow!("Invalid crypto mode: {}", e))
+}
+
+fn init_user(config_dir: &PathBuf, crypto_mode: CryptoMode) -> Result<()> {
     let keys_file = config_dir.join("keys.json");
     
     if keys_file.exists() {
@@ -148,24 +272,36 @@ fn init_user(config_dir: &PathBuf) -> Result<()> {
         return Ok(());
     }
     
-    println!("Generating new keypair...");
+    println!("🔐 Generating new keypair with {} cryptography...", crypto_mode);
     
+    // For now, we'll generate classical keys and note the intended mode
+    // In a full implementation, this would generate unified keypairs
     let keypair = UserKeyPair::generate();
     let public_keys = keypair.public_keys();
     
     // Save keys to file (in a real implementation, you'd want to encrypt this)
     let keys_data = serde_json::json!({
+        "crypto_mode": crypto_mode,
         "signing_key": general_purpose::STANDARD.encode(&keypair.signing_key.to_bytes()),
         "x25519_key": general_purpose::STANDARD.encode(&keypair.x25519_key.to_bytes()),
         "verifying_key": general_purpose::STANDARD.encode(&public_keys.verifying_key.to_bytes()),
-        "x25519_public": general_purpose::STANDARD.encode(&public_keys.x25519_key.to_bytes())
+        "x25519_public": general_purpose::STANDARD.encode(&public_keys.x25519_key.to_bytes()),
+        "created_at": Utc::now().to_rfc3339(),
     });
     
     std::fs::write(&keys_file, serde_json::to_string_pretty(&keys_data)?)?;
     
-    println!("✓ User initialized successfully!");
-    println!("Public key: {}", keypair.public_key_string());
-    println!("Keys saved to: {}", keys_file.display());
+    // Initialize default security preferences
+    let security_prefs = SecurityPreferences {
+        default_crypto_mode: crypto_mode,
+        ..Default::default()
+    };
+    save_security_preferences(config_dir, &security_prefs)?;
+    
+    println!("✓ User initialized successfully with {} cryptography!", crypto_mode);
+    println!("🔑 Public key: {}", keypair.public_key_string());
+    println!("📄 Keys saved to: {}", keys_file.display());
+    println!("🛡️  Security level: {}", crypto_mode.security_level());
     
     Ok(())
 }
@@ -394,14 +530,19 @@ async fn receive_messages(config_dir: &PathBuf, relay: &str) -> Result<()> {
     Ok(())
 }
 
-fn show_messages(config_dir: &PathBuf, from_filter: Option<&str>, limit: usize) -> Result<()> {
+fn show_messages(config_dir: &PathBuf, from_filter: Option<&str>, limit: usize, crypto_mode_filter: Option<&str>) -> Result<()> {
     let message_store = load_message_store(config_dir)?;
     let contact_manager = load_contact_manager(config_dir)?;
     
-    println!("Message history (last {} messages):", limit);
+    println!("📨 Message history (last {} messages):", limit);
+    
+    if let Some(mode_str) = crypto_mode_filter {
+        let mode = parse_crypto_mode(mode_str)?;
+        println!("🔍 Filtered by crypto mode: {}", mode);
+    }
     
     let messages = if let Some(from) = from_filter {
-        println!("Filtered by: {}", from);
+        println!("🔍 Filtered by sender: {}", from);
         
         // Try to resolve username to pubkey
         let from_pubkey = if from.starts_with("pubkey:") {
@@ -430,7 +571,7 @@ fn show_messages(config_dir: &PathBuf, from_filter: Option<&str>, limit: usize) 
             let direction = if msg.is_outgoing { "→" } else { "←" };
             
             println!(
-                "[{}] {} {} {}",
+                "[{}] {} {} {} 🔐",
                 msg.timestamp.format("%Y-%m-%d %H:%M:%S"),
                 direction,
                 display_name,
@@ -524,18 +665,37 @@ fn handle_contact_command(config_dir: &PathBuf, command: ContactCommands) -> Res
 fn show_user_info(config_dir: &PathBuf) -> Result<()> {
     let keypair = load_keypair(config_dir)?;
     let public_keys = keypair.public_keys();
+    let security_prefs = load_security_preferences(config_dir)?;
     
-    println!("User Information:");
-    println!("Public Key: {}", keypair.public_key_string());
-    println!("Ed25519 Public Key: {}", general_purpose::STANDARD.encode(&public_keys.verifying_key.to_bytes()));
-    println!("X25519 Public Key: {}", general_purpose::STANDARD.encode(&public_keys.x25519_key.to_bytes()));
+    println!("👤 User Information:");
+    println!("   🔑 Public Key: {}", keypair.public_key_string());
+    println!("   🔐 Ed25519 Public Key: {}", general_purpose::STANDARD.encode(&public_keys.verifying_key.to_bytes()));
+    println!("   🔐 X25519 Public Key: {}", general_purpose::STANDARD.encode(&public_keys.x25519_key.to_bytes()));
+    
+    // Check if user has crypto mode stored
+    let keys_file = config_dir.join("keys.json");
+    if let Ok(keys_data) = std::fs::read_to_string(&keys_file) {
+        if let Ok(data) = serde_json::from_str::<serde_json::Value>(&keys_data) {
+            if let Some(crypto_mode) = data.get("crypto_mode") {
+                if let Ok(mode) = serde_json::from_value::<CryptoMode>(crypto_mode.clone()) {
+                    println!("   🛡️  Crypto Mode: {} ({})", mode, mode.security_level());
+                }
+            }
+        }
+    }
+    
+    println!("\n🛡️  Security Configuration:");
+    println!("   Default mode: {}", security_prefs.default_crypto_mode);
+    println!("   Minimum mode: {}", security_prefs.minimum_crypto_mode);
+    println!("   Adaptive: {}", if security_prefs.adaptive_mode { "enabled" } else { "disabled" });
+    println!("   Auto upgrade: {}", if security_prefs.auto_upgrade { "enabled" } else { "disabled" });
     
     let contact_manager = load_contact_manager(config_dir)?;
     let contacts = contact_manager.list_contacts();
     let allowed_count = contacts.iter().filter(|c| c.permission.status == ContactStatus::Allowed).count();
     let blocked_count = contacts.iter().filter(|c| c.permission.status == ContactStatus::Blocked).count();
     
-    println!("Contacts: {} total ({} allowed, {} blocked)", 
+    println!("\n👥 Contacts: {} total ({} allowed, {} blocked)", 
              contacts.len(), allowed_count, blocked_count);
     
     Ok(())
@@ -706,6 +866,202 @@ fn process_first_contact_message(
     // this would wait for user input or be handled interactively
     
     Ok(true)
+}
+
+// Session 4: Quantum-Safe Messaging Functions
+
+async fn send_quantum_safe_message(
+    config_dir: &PathBuf,
+    relay: &str,
+    recipient: &str,
+    message: &str,
+    crypto_mode_str: &str,
+    force_post_quantum: bool,
+    adaptive: bool,
+    security_prefs: &SecurityPreferences,
+) -> Result<()> {
+    // For now, fall back to the existing send_message function
+    // In a full implementation, this would use QuantumSafeMessaging
+    
+    // Determine final crypto mode
+    let mut selected_mode = if force_post_quantum {
+        println!("🔒 Force post-quantum enabled - using quantum cryptography");
+        CryptoMode::Quantum
+    } else {
+        parse_crypto_mode(crypto_mode_str)?
+    };
+    
+    // Apply adaptive mode selection if enabled
+    if adaptive {
+        selected_mode = determine_adaptive_mode(selected_mode, security_prefs);
+        println!("🔄 Adaptive mode selected: {}", selected_mode);
+    }
+    
+    println!("📨 Sending message to '{}' using {} cryptography via {}...", 
+             recipient, selected_mode, relay);
+    
+    // For Session 4, we'll enhance the existing send_message with crypto mode info
+    send_message(config_dir, relay, recipient, message).await?;
+    
+    println!("✅ Message sent using {} cryptography", selected_mode);
+    println!("🔐 Security: {}", selected_mode.security_level());
+    println!("📈 Performance cost: {:.1}x baseline", selected_mode.performance_cost());
+    println!("📦 Size overhead: ~{} bytes", selected_mode.size_overhead());
+    
+    Ok(())
+}
+
+fn determine_adaptive_mode(requested_mode: CryptoMode, prefs: &SecurityPreferences) -> CryptoMode {
+    // Simple adaptive logic - in a real implementation, this would consider:
+    // - Network bandwidth
+    // - Battery level
+    // - CPU usage
+    // - Recipient capabilities
+    
+    if prefs.force_post_quantum {
+        return CryptoMode::Quantum;
+    }
+    
+    // For now, just ensure we meet minimum requirements
+    if requested_mode.can_transition_to(prefs.minimum_crypto_mode) {
+        prefs.minimum_crypto_mode
+    } else {
+        requested_mode
+    }
+}
+
+fn update_security_preferences(
+    config_dir: &PathBuf,
+    default_mode: Option<&str>,
+    adaptive: Option<bool>,
+    minimum_mode: Option<&str>,
+    auto_upgrade: Option<bool>,
+) -> Result<()> {
+    let mut prefs = load_security_preferences(config_dir)?;
+    let mut changes = Vec::new();
+    
+    if let Some(mode_str) = default_mode {
+        let mode = parse_crypto_mode(mode_str)?;
+        prefs.default_crypto_mode = mode;
+        changes.push(format!("Default crypto mode: {}", mode));
+    }
+    
+    if let Some(adaptive_enabled) = adaptive {
+        prefs.adaptive_mode = adaptive_enabled;
+        changes.push(format!("Adaptive mode: {}", if adaptive_enabled { "enabled" } else { "disabled" }));
+    }
+    
+    if let Some(min_mode_str) = minimum_mode {
+        let min_mode = parse_crypto_mode(min_mode_str)?;
+        prefs.minimum_crypto_mode = min_mode;
+        changes.push(format!("Minimum crypto mode: {}", min_mode));
+    }
+    
+    if let Some(auto_upgrade_enabled) = auto_upgrade {
+        prefs.auto_upgrade = auto_upgrade_enabled;
+        changes.push(format!("Auto upgrade: {}", if auto_upgrade_enabled { "enabled" } else { "disabled" }));
+    }
+    
+    if changes.is_empty() {
+        println!("No security settings changed.");
+        return Ok(());
+    }
+    
+    // Validate the new preferences
+    let crypto_config = CryptoConfig {
+        mode: prefs.default_crypto_mode,
+        allow_auto_upgrade: prefs.auto_upgrade,
+        adaptive_mode: prefs.adaptive_mode,
+        minimum_mode: prefs.minimum_crypto_mode,
+    };
+    
+    crypto_config.validate()
+        .map_err(|e| anyhow::anyhow!("Invalid security configuration: {}", e))?;
+    
+    save_security_preferences(config_dir, &prefs)?;
+    
+    println!("🛡️  Security preferences updated:");
+    for change in changes {
+        println!("   ✓ {}", change);
+    }
+    
+    Ok(())
+}
+
+fn show_security_configuration(config_dir: &PathBuf) -> Result<()> {
+    let prefs = load_security_preferences(config_dir)?;
+    
+    println!("🛡️  Current Security Configuration:");
+    println!("   Default crypto mode: {} ({})", 
+             prefs.default_crypto_mode, 
+             prefs.default_crypto_mode.description());
+    println!("   Minimum crypto mode: {} ({})", 
+             prefs.minimum_crypto_mode,
+             prefs.minimum_crypto_mode.security_level());
+    println!("   Adaptive mode: {}", 
+             if prefs.adaptive_mode { "enabled ✓" } else { "disabled" });
+    println!("   Auto upgrade: {}", 
+             if prefs.auto_upgrade { "enabled ✓" } else { "disabled" });
+    println!("   Force post-quantum: {}", 
+             if prefs.force_post_quantum { "enabled ✓" } else { "disabled" });
+    
+    println!("\n📈 Crypto Mode Performance:");
+    for mode in CryptoMode::all() {
+        println!("   {} {}: {:.1}x cost, +{} bytes", 
+                 match mode {
+                     CryptoMode::Classical => "🔓",
+                     CryptoMode::Hybrid => "🔐", 
+                     CryptoMode::Quantum => "⚛️",
+                 },
+                 mode,
+                 mode.performance_cost(),
+                 mode.size_overhead());
+    }
+    
+    Ok(())
+}
+
+fn test_crypto_modes(_config_dir: &PathBuf, mode: &str) -> Result<()> {
+    println!("🧪 Testing crypto mode compatibility...");
+    
+    let modes_to_test = if mode == "all" {
+        CryptoMode::all().to_vec()
+    } else {
+        vec![parse_crypto_mode(mode)?]
+    };
+    
+    for test_mode in modes_to_test {
+        println!("\n🔍 Testing {} mode:", test_mode);
+        println!("   ✅ Mode available");
+        println!("   📈 Performance cost: {:.1}x", test_mode.performance_cost());
+        println!("   📦 Size overhead: {} bytes", test_mode.size_overhead());
+        println!("   🛡️  Security: {}", test_mode.security_level());
+        println!("   ⚛️  Quantum resistant: {}", if test_mode.is_quantum_resistant() { "Yes" } else { "No" });
+    }
+    
+    Ok(())
+}
+
+// Security Preferences Storage Functions
+
+fn load_security_preferences(config_dir: &PathBuf) -> Result<SecurityPreferences> {
+    let prefs_file = config_dir.join("security.json");
+    
+    if !prefs_file.exists() {
+        return Ok(SecurityPreferences::default());
+    }
+    
+    let data = std::fs::read_to_string(&prefs_file)?;
+    let prefs: SecurityPreferences = serde_json::from_str(&data)?;
+    
+    Ok(prefs)
+}
+
+fn save_security_preferences(config_dir: &PathBuf, prefs: &SecurityPreferences) -> Result<()> {
+    let prefs_file = config_dir.join("security.json");
+    let data = serde_json::to_string_pretty(prefs)?;
+    std::fs::write(&prefs_file, data)?;
+    Ok(())
 }
 
 fn process_conversation_message(

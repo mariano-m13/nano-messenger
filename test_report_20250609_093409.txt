@@ -1,0 +1,17 @@
+Nano-Messenger Test Report
+=========================
+Generated: Mon Jun  9 09:34:09 CEST 2025
+
+Test Statistics:
+Total: 9, Passed: 0, Failed: 9
+
+Detailed Results:
+❌ Compilation Check - FAILED (0s)
+❌ Library Build - FAILED (0s)
+❌ Session 1 Validation - FAILED (0s)
+❌ Session 2 Validation - FAILED (0s)
+❌ Session 3 Validation - FAILED (0s)
+❌ Session 4 Validation - FAILED (0s)
+❌ Session 5 Validation - FAILED (0s)
+❌ Session 6 Validation - FAILED (0s)
+❌ Session 7 Validation - FAILED (0s)

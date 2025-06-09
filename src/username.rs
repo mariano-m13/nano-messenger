@@ -173,19 +173,20 @@ mod tests {
         let alice_keypair = UserKeyPair::generate();
         
         // Create and register first claim
-        let mut claim1 = create_username_claim("alice2024", &alice_keypair).unwrap();
+        let claim1 = create_username_claim("alice2024", &alice_keypair).unwrap();
         registry.register_claim(claim1.clone()).unwrap();
         
-        // Create a newer claim from the same user
-        std::thread::sleep(std::time::Duration::from_millis(10)); // Ensure newer timestamp
-        let claim2 = create_username_claim("alice2024", &alice_keypair).unwrap();
+        // Create a newer claim from the same user by manually setting timestamp
+        let mut claim2 = create_username_claim("alice2024", &alice_keypair).unwrap();
+        claim2.timestamp = claim1.timestamp + 1; // Ensure newer timestamp
+        claim2.sign(&alice_keypair.signing_key).unwrap(); // Re-sign with new timestamp
         
         // Should allow update
         registry.register_claim(claim2.clone()).unwrap();
         
         // Should have the newer claim
         let retrieved = registry.get_claim("alice2024").unwrap();
-        assert!(retrieved.timestamp >= claim2.timestamp);
+        assert!(retrieved.timestamp > claim1.timestamp);
     }
 
     #[test]

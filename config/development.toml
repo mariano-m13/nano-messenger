@@ -1,0 +1,124 @@
+# Quantum-Resistant Nano-Messenger - Development Configuration
+# Session 8: Production Hardening
+
+[server]
+bind_address = "127.0.0.1"            # Localhost only for development
+api_port = 8080
+websocket_port = 8443
+worker_threads = 4
+max_connections = 100
+connection_timeout_seconds = 60
+keep_alive_seconds = 120
+tls_cert_path = "./certs/dev-cert.pem"
+tls_key_path = "./certs/dev-key.pem"
+server_name = "nano-messenger-dev"
+environment = "Development"
+
+[security]
+minimum_crypto_mode = "classical"     # Classical for faster development
+require_post_quantum = false
+max_message_age_seconds = 600
+
+[security.rate_limiting]
+max_messages_per_minute = 1000        # High limits for development
+max_connections_per_ip = 100
+burst_allowance = 200
+ban_duration_minutes = 5
+
+[security.key_rotation]
+automatic_rotation = false            # Manual rotation for development
+rotation_interval_days = 365
+emergency_rotation_enabled = true
+pre_rotation_notification_hours = 1
+
+[security.access_control]
+require_authentication = false        # Optional for development
+session_timeout_minutes = 480         # 8 hours
+max_failed_attempts = 10
+lockout_duration_minutes = 5
+require_mfa = false
+
+[security.threat_detection]
+enabled = false                       # Disabled for development
+anomaly_detection = false
+ip_reputation_checking = false
+behavioral_analysis = false
+
+[database]
+database_type = "SQLite"              # SQLite for easy development
+connection_string = "./data/nano_messenger_dev.db"
+max_connections = 5
+connection_timeout_seconds = 30
+query_timeout_seconds = 120
+ssl_required = false
+backup_enabled = false                # Not needed for development
+encryption_at_rest = false
+
+[logging]
+level = "Debug"                       # Verbose logging for development
+structured_logging = false            # Simple logging for development
+audit_log_path = "./logs/audit.log"
+error_log_path = "./logs/error.log"
+access_log_path = "./logs/access.log"
+
+[logging.log_rotation]
+max_size_mb = 10
+max_files = 3
+rotation_schedule = "Size"
+compression_enabled = false
+
+[monitoring]
+metrics_enabled = false               # Disabled for development
+metrics_port = 9090
+health_check_interval_seconds = 60
+
+[monitoring.alert_thresholds]
+cpu_usage_percent = 95.0
+memory_usage_percent = 95.0
+disk_usage_percent = 98.0
+error_rate_percent = 10.0
+response_time_ms = 5000
+
+[compliance]
+gdpr_enabled = false                  # Disabled for development
+hipaa_enabled = false
+sox_enabled = false
+data_retention_days = 7               # Short retention
+audit_logging_enabled = false
+data_encryption_required = false
+breach_notification_enabled = false
+
+[compliance.privacy_controls]
+data_minimization = false
+purpose_limitation = false
+storage_limitation = false
+accuracy_controls = false
+security_controls = false
+accountability_measures = false
+
+[performance]
+enable_caching = false                # Disabled for development
+cache_size_mb = 64
+cache_ttl_seconds = 300
+connection_pooling = false
+async_processing = true
+
+[performance.batch_processing]
+enabled = false                       # Disabled for development
+batch_size = 10
+batch_timeout_ms = 1000
+max_concurrent_batches = 2
+
+[performance.resource_limits]
+max_memory_mb = 1024
+max_cpu_percent = 90.0
+max_file_descriptors = 1024
+max_network_connections = 100
+
+[backup]
+enabled = false                       # Disabled for development
+backup_interval_hours = 24
+retention_days = 7
+backup_location = "./backups"
+encryption_enabled = false
+compression_enabled = false

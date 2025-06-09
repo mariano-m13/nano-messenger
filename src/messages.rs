@@ -26,9 +26,9 @@ impl StoredMessage {
         is_outgoing: bool,
     ) -> Self {
         let conversation_id = if is_outgoing {
-            format!("{}:{}", our_pubkey, payload.from_pubkey)
+            format!("{}|{}", our_pubkey, payload.from_pubkey)
         } else {
-            format!("{}:{}", payload.from_pubkey, our_pubkey)
+            format!("{}|{}", payload.from_pubkey, our_pubkey)
         };
 
         let id = format!("{}:{}:{}", conversation_id, payload.counter, payload.timestamp);
@@ -194,7 +194,7 @@ impl MessageStore {
                     .count();
 
                 // Extract other party's pubkey from conversation ID
-                let parts: Vec<&str> = conversation_id.split(':').collect();
+                let parts: Vec<&str> = conversation_id.split('|').collect();
                 let other_pubkey = if parts.len() >= 2 {
                     if parts[0] != last_message.to_pubkey {
                         parts[0].to_string()
@@ -298,6 +298,7 @@ mod tests {
             room: None,
             counter,
             sig: "test_sig".to_string(),
+            crypto_mode: Some(crate::crypto::CryptoMode::Classical), // Add the missing field
         }
     }
 

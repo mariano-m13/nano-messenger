@@ -1,0 +1,150 @@
+# Quantum-Resistant Nano-Messenger - Production Configuration
+# Session 8: Production Hardening
+
+[server]
+bind_address = "0.0.0.0"
+api_port = 8080
+websocket_port = 8443
+worker_threads = 16                    # Number of CPU cores
+max_connections = 10000
+connection_timeout_seconds = 30
+keep_alive_seconds = 300
+tls_cert_path = "/etc/ssl/certs/nano-messenger.crt"
+tls_key_path = "/etc/ssl/private/nano-messenger.key"
+server_name = "nano-messenger-prod"
+environment = "Production"
+
+[security]
+minimum_crypto_mode = "hybrid"         # Use hybrid crypto in production
+require_post_quantum = false           # Can be enabled when ready
+max_message_age_seconds = 300
+
+[security.rate_limiting]
+max_messages_per_minute = 60
+max_connections_per_ip = 10
+burst_allowance = 20
+ban_duration_minutes = 60
+
+[security.key_rotation]
+automatic_rotation = true
+rotation_interval_days = 30
+emergency_rotation_enabled = true
+pre_rotation_notification_hours = 24
+
+[security.access_control]
+require_authentication = true
+session_timeout_minutes = 60
+max_failed_attempts = 3
+lockout_duration_minutes = 30
+require_mfa = true                     # Require MFA in production
+
+[security.threat_detection]
+enabled = true
+anomaly_detection = true
+ip_reputation_checking = true
+behavioral_analysis = true
+
+[database]
+database_type = "PostgreSQL"
+connection_string = "postgresql://nano_user:${DB_PASSWORD}@postgres.internal:5432/nano_messenger?sslmode=require"
+max_connections = 50
+connection_timeout_seconds = 30
+query_timeout_seconds = 60
+ssl_required = true                    # Required in production
+backup_enabled = true
+encryption_at_rest = true
+
+[logging]
+level = "Info"                         # Info level for production
+structured_logging = true
+audit_log_path = "/var/log/nano-messenger/audit.log"
+error_log_path = "/var/log/nano-messenger/error.log"
+access_log_path = "/var/log/nano-messenger/access.log"
+
+[logging.log_rotation]
+max_size_mb = 100
+max_files = 52                         # Keep one year of logs
+rotation_schedule = "Daily"
+compression_enabled = true
+
+[logging.remote_logging]
+enabled = true
+endpoint = "https://logs.example.com/v1/logs"
+api_key = "${LOG_API_KEY}"
+buffer_size = 1000
+flush_interval_seconds = 60
+
+[monitoring]
+metrics_enabled = true
+metrics_port = 9090
+health_check_interval_seconds = 30
+
+[monitoring.alert_thresholds]
+cpu_usage_percent = 80.0
+memory_usage_percent = 85.0
+disk_usage_percent = 90.0
+error_rate_percent = 1.0
+response_time_ms = 1000
+
+[monitoring.external_monitoring]
+prometheus_enabled = true
+prometheus_endpoint = "http://prometheus.internal:9090"
+grafana_enabled = true
+grafana_endpoint = "http://grafana.internal:3000"
+
+[[monitoring.external_monitoring.custom_metrics]]
+name = "quantum_crypto_operations"
+description = "Number of post-quantum cryptographic operations"
+metric_type = "Counter"
+labels = ["crypto_mode", "operation_type"]
+
+[compliance]
+gdpr_enabled = true                    # Enable for EU operations
+hipaa_enabled = false                  # Enable if handling health data
+sox_enabled = true                     # Enable for public companies
+data_retention_days = 2555             # 7 years
+audit_logging_enabled = true
+data_encryption_required = true
+breach_notification_enabled = true
+
+[compliance.privacy_controls]
+data_minimization = true
+purpose_limitation = true
+storage_limitation = true
+accuracy_controls = true
+security_controls = true
+accountability_measures = true
+
+[performance]
+enable_caching = true
+cache_size_mb = 1024                   # 1GB cache for production
+cache_ttl_seconds = 3600               # 1 hour TTL
+connection_pooling = true
+async_processing = true
+
+[performance.batch_processing]
+enabled = true
+batch_size = 500                       # Larger batches for production
+batch_timeout_ms = 100
+max_concurrent_batches = 20
+
+[performance.resource_limits]
+max_memory_mb = 8192                   # 8GB memory limit
+max_cpu_percent = 80.0
+max_file_descriptors = 65536
+max_network_connections = 10000
+
+[backup]
+enabled = true
+backup_interval_hours = 6
+retention_days = 90
+backup_location = "/var/backups/nano-messenger"
+encryption_enabled = true
+compression_enabled = true
+
+[backup.remote_backup]
+provider = "AWS_S3"
+endpoint = "s3.amazonaws.com"
+credentials_path = "/etc/nano-messenger/aws-credentials"
+bucket_name = "nano-messenger-backups-prod"
+region = "us-east-1"

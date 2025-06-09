@@ -1,0 +1,124 @@
+# Quantum-Resistant Nano-Messenger - Staging Configuration
+# Session 8: Production Hardening
+
+[server]
+bind_address = "0.0.0.0"
+api_port = 8080
+websocket_port = 8443
+worker_threads = 8
+max_connections = 1000
+connection_timeout_seconds = 30
+keep_alive_seconds = 300
+tls_cert_path = "temp-certs/staging.crt"
+tls_key_path = "temp-certs/staging.key"
+server_name = "nano-messenger-staging"
+environment = "Staging"
+
+[security]
+minimum_crypto_mode = "hybrid"
+require_post_quantum = false
+max_message_age_seconds = 300
+
+[security.rate_limiting]
+max_messages_per_minute = 120          # Higher limits for testing
+max_connections_per_ip = 20
+burst_allowance = 50
+ban_duration_minutes = 30
+
+[security.key_rotation]
+automatic_rotation = true
+rotation_interval_days = 7             # More frequent rotation for testing
+emergency_rotation_enabled = true
+pre_rotation_notification_hours = 4
+
+[security.access_control]
+require_authentication = true
+session_timeout_minutes = 120
+max_failed_attempts = 5
+lockout_duration_minutes = 15
+require_mfa = false                    # Optional in staging
+
+[security.threat_detection]
+enabled = true
+anomaly_detection = true
+ip_reputation_checking = false         # Disabled for staging
+behavioral_analysis = false
+
+[database]
+database_type = "PostgreSQL"
+connection_string = "postgresql://nano_staging:${DB_PASSWORD}@postgres-staging.internal:5432/nano_messenger_staging?sslmode=require"
+max_connections = 20
+connection_timeout_seconds = 30
+query_timeout_seconds = 60
+ssl_required = true
+backup_enabled = true
+encryption_at_rest = true
+
+[logging]
+level = "Debug"                        # More verbose for staging
+structured_logging = true
+audit_log_path = "temp-logs/audit.log"
+error_log_path = "temp-logs/error.log"
+access_log_path = "temp-logs/access.log"
+
+[logging.log_rotation]
+max_size_mb = 50
+max_files = 10
+rotation_schedule = "Daily"
+compression_enabled = true
+
+[monitoring]
+metrics_enabled = true
+metrics_port = 9090
+health_check_interval_seconds = 15     # More frequent health checks
+
+[monitoring.alert_thresholds]
+cpu_usage_percent = 85.0
+memory_usage_percent = 90.0
+disk_usage_percent = 95.0
+error_rate_percent = 5.0               # Higher tolerance for staging
+response_time_ms = 2000
+
+[compliance]
+gdpr_enabled = true                    # Test compliance features
+hipaa_enabled = false
+sox_enabled = false                    # Not needed for staging
+data_retention_days = 30               # Shorter retention
+audit_logging_enabled = true
+data_encryption_required = true
+breach_notification_enabled = false    # Disabled for staging
+
+[compliance.privacy_controls]
+data_minimization = true
+purpose_limitation = true
+storage_limitation = true
+accuracy_controls = true
+security_controls = true
+accountability_measures = true
+
+[performance]
+enable_caching = true
+cache_size_mb = 256
+cache_ttl_seconds = 1800
+connection_pooling = true
+async_processing = true
+
+[performance.batch_processing]
+enabled = true
+batch_size = 100
+batch_timeout_ms = 200
+max_concurrent_batches = 10
+
+[performance.resource_limits]
+max_memory_mb = 4096
+max_cpu_percent = 85.0
+max_file_descriptors = 32768
+max_network_connections = 5000
+
+[backup]
+enabled = true
+backup_interval_hours = 12
+retention_days = 30
+backup_location = "temp-backups"
+encryption_enabled = true
+compression_enabled = true
