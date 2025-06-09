@@ -393,12 +393,10 @@ cargo bench
 
 - **Documentation**: See [docs/](docs/) directory
 - **Issues**: [GitHub Issues](https://github.com/your-org/nano-messenger/issues)
-- **Security**: Report to security@your-org.com
-- **Enterprise**: Contact enterprise@your-org.com
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Nano Open Source License - see the [LICENSE](LICENSE) file for details.
 
 ## ⚡ Quick Links
 
