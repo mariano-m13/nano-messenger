@@ -148,3 +148,55 @@ endpoint = "s3.amazonaws.com"
 credentials_path = "/etc/nano-messenger/aws-credentials"
 bucket_name = "nano-messenger-backups-prod"
 region = "us-east-1"
+
+# Session 9: Media and File Attachment Configuration
+[media]
+enabled = true
+max_file_size_mb = 100
+allowed_mime_types = ["image/*", "video/*", "application/pdf", "text/*"]
+storage_backend = "local"  # local, s3, distributed
+storage_path = "/var/lib/nano-messenger/files"
+
+[media.encryption]
+default_crypto_mode = "hybrid"
+require_post_quantum_for_files = true
+chunk_size_mb = 10
+
+[media.security]
+virus_scanning_enabled = true
+content_type_validation = true
+file_extension_validation = true
+quarantine_suspicious_files = true
+
+[media.processing]
+enabled = true
+max_processing_time_seconds = 300
+concurrent_processing_jobs = 4
+temp_directory = "/tmp/nano-messenger"
+
+[media.processing.images]
+generate_thumbnails = true
+thumbnail_sizes = [150, 300, 600]
+optimization_enabled = true
+target_quality = 85
+strip_exif_data = true  # Privacy protection
+supported_formats = ["jpeg", "png", "webp", "gif"]
+max_dimension = 4096
+progressive_jpeg = true
+
+[media.processing.video]
+generate_thumbnails = true
+thumbnail_timestamp_seconds = 5.0
+compression_enabled = true
+max_video_length_seconds = 1800  # 30 minutes
+supported_codecs = ["h264", "h265", "vp9"]
+target_bitrate_kbps = 2000
+max_resolution = [1920, 1080]
+
+[media.processing.progressive]
+chunk_size_kb = 64
+quality_levels = ["thumbnail", "preview", "standard", "high"]
+adaptive_bitrate = true
+preload_next_quality = true
+cache_size_mb = 100
+bandwidth_detection_interval_ms = 5000

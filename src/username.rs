@@ -3,6 +3,9 @@ use crate::error::{NanoError, Result};
 use crate::protocol::UsernameClaim;
 use std::collections::HashMap;
 
+/// User identifier type
+pub type UserId = String;
+
 /// Username registry that can be used by relays or clients
 #[derive(Default, Clone)]
 pub struct UsernameRegistry {

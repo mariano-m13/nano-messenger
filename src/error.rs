@@ -28,6 +28,16 @@ pub enum NanoError {
     
     #[error("Message expired")]
     MessageExpired,
+    
+    // Session 9: Media and file attachment errors
+    #[error("Media error: {0}")]
+    Media(String),
+    
+    #[error("Storage error: {0}")]
+    Storage(String),
+    
+    #[error("Configuration error: {0}")]
+    Config(String),
 }
 
 pub type Result<T> = std::result::Result<T, NanoError>;

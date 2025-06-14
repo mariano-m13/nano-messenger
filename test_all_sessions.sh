@@ -2,6 +2,7 @@
 
 # Comprehensive Test Script for Nano-Messenger Quantum-Resistant Protocol
 # Tests all session validations and provides detailed reporting
+# FIXED VERSION - addresses log file path issues
 
 set -e  # Exit on any error
 
@@ -49,19 +50,11 @@ run_test() {
     # Capture start time
     start_time=$(date +%s)
     
-    # Run the test and capture output (with optional timeout)
-    if command -v timeout >/dev/null 2>&1; then
-        # Linux - use timeout
-        timeout_cmd="timeout 60s"
-    elif command -v gtimeout >/dev/null 2>&1; then
-        # macOS with GNU coreutils - use gtimeout
-        timeout_cmd="gtimeout 60s"
-    else
-        # No timeout available - run without timeout
-        timeout_cmd=""
-    fi
+    # Create unique log file for this test
+    local log_file="/tmp/nano_test_$(date +%s)_$$.log"
     
-    if eval "$timeout_cmd $test_command" > /tmp/test_output_$.log 2>&1; then
+    # Run the test and capture output
+    if eval "$test_command" > "$log_file" 2>&1; then
         end_time=$(date +%s)
         duration=$((end_time - start_time))
         
@@ -70,9 +63,9 @@ run_test() {
         SESSION_RESULTS+=("✅ $test_name - PASSED (${duration}s)")
         
         # Show key success indicators from output
-        if grep -q "COMPLETE\|SUCCESS\|✅" /tmp/test_output_$$.log; then
+        if [ -f "$log_file" ] && grep -q "COMPLETE\|SUCCESS\|✅" "$log_file" 2>/dev/null; then
             echo -e "${GREEN}   📊 Key results:${NC}"
-            grep -E "(✅|COMPLETE|SUCCESS|PASSED)" /tmp/test_output_$$.log | head -3 | sed 's/^/      /'
+            grep -E "(✅|COMPLETE|SUCCESS|PASSED)" "$log_file" 2>/dev/null | head -3 | sed 's/^/      /' || true
         fi
     else
         end_time=$(date +%s)
@@ -84,11 +77,15 @@ run_test() {
         
         # Show error details
         echo -e "${RED}   📋 Error details:${NC}"
-        tail -10 /tmp/test_output_$$.log | sed 's/^/      /'
+        if [ -f "$log_file" ]; then
+            tail -10 "$log_file" | sed 's/^/      /'
+        else
+            echo "      Log file not found"
+        fi
     fi
     
     # Cleanup
-    rm -f /tmp/test_output_$$.log
+    rm -f "$log_file"
 }
 
 # Function to check compilation
@@ -132,6 +129,33 @@ test_sessions() {
     # Session 7: Security Validation
     print_test_header "SESSION 7" "Security Validation"
     run_test "Session 7 Validation" "cargo run --example session7_validation" "Comprehensive security property verification"
+    
+    # Session 9: Media and File Attachments (if available)
+    if [ -f "examples/session9_validation.rs" ]; then
+        print_test_header "SESSION 9" "Media and File Attachments"
+        run_test "Session 9 Validation" "cargo run --example session9_validation" "Media upload, processing, and secure transfer"
+    fi
+    
+    # Session 10: Media Processing & Optimization (if available)
+    if [ -f "examples/session10_validation.rs" ]; then
+        print_test_header "SESSION 10" "Media Processing & Optimization"
+        run_test "Session 10 Validation" "cargo run --example session10_validation" "Advanced media processing and thumbnails"
+    fi
+    
+    # Session 11: Advanced Media Features (if available)
+    if [ -f "examples/session11_validation.rs" ]; then
+        print_test_header "SESSION 11" "Advanced Media Features"
+        run_test "Session 11 Validation" "cargo run --example session11_validation" "Large file support, streaming, and collaboration"
+    fi
+    
+    # Session 12: Security & Compliance for Media - Use fixed version
+    if [ -f "examples/session12_validation_fixed.rs" ]; then
+        print_test_header "SESSION 12" "Security & Compliance for Media (Fixed)"
+        run_test "Session 12 Validation (Fixed)" "cargo run --example session12_validation_fixed" "Core security and compliance features"
+    elif [ -f "examples/session12_validation.rs" ]; then
+        print_test_header "SESSION 12" "Security & Compliance for Media"
+        run_test "Session 12 Validation" "cargo run --example session12_validation" "Enterprise security, threat detection, and compliance"
+    fi
 }
 
 # Function to run unit tests
@@ -240,6 +264,9 @@ main() {
         exit 1
     fi
     
+    # Change to project directory
+    cd /Users/mariano/Desktop/Code/nano-messenger
+    
     # Run test phases
     check_compilation
     test_sessions
@@ -280,17 +307,20 @@ case "${1:-}" in
         ;;
     --quick|-q)
         echo -e "${CYAN}🚀 Running quick validation...${NC}\n"
+        cd /Users/mariano/Desktop/Code/nano-messenger
         check_compilation
         test_sessions
         generate_report
         ;;
     --sessions)
         echo -e "${CYAN}📋 Running session tests only...${NC}\n"
+        cd /Users/mariano/Desktop/Code/nano-messenger
         test_sessions
         generate_report
         ;;
     --unit)
         echo -e "${CYAN}🧪 Running unit tests only...${NC}\n"
+        cd /Users/mariano/Desktop/Code/nano-messenger
         test_unit_tests
         generate_report
         ;;

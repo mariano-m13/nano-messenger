@@ -1,0 +1,1 @@
+cd /Users/mariano/Desktop/Code/nano-messenger && chmod +x test_direct_fix.sh && ./test_direct_fix.sh

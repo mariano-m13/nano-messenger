@@ -71,7 +71,7 @@ impl ComprehensiveTestResults {
 
 /// Run a single session validation example
 fn run_session_validation(session_name: &str) -> SessionTestResult {
-    let example_name = format!("{}_validation", session_name.to_lowercase().replace(' ', '_'));
+    let example_name = format!("{}_validation", session_name.to_lowercase().replace(' ', "_"));
     
     println!("🔍 Testing: {}", session_name);
     
@@ -268,7 +268,6 @@ mod tests {
 #[cfg(test)]
 mod benchmark_tests {
     use super::*;
-    use std::time::Instant;
     
     #[test]
     #[ignore] // Use `cargo test -- --ignored` to run benchmarks

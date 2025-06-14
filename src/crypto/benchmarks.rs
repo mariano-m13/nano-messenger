@@ -210,7 +210,7 @@ impl CryptoBenchmark {
                     // Simplified warmup for hybrid
                     let _ = keypair.public_key_string();
                 }
-                CryptoMode::Quantum => {
+                CryptoMode::Quantum | CryptoMode::QuantumSafe => {
                     let keypair = PostQuantumUserKeyPair::generate();
                     let _test_data = b"warmup data";
                     // Simplified warmup for post-quantum
@@ -234,7 +234,7 @@ impl CryptoBenchmark {
                 CryptoMode::Hybrid => {
                     let _keypair = HybridUserKeyPair::generate();
                 }
-                CryptoMode::Quantum => {
+                CryptoMode::Quantum | CryptoMode::QuantumSafe => {
                     let _keypair = PostQuantumUserKeyPair::generate();
                 }
             }
@@ -279,7 +279,7 @@ impl CryptoBenchmark {
                     let _ = ClassicalAsymmetricEncryption::decrypt_classical_direct(&keypair.x25519_key, &encrypted)?;
                     decryption_durations.push(start.elapsed() * 2); // Approximate hybrid overhead
                 }
-                CryptoMode::Quantum => {
+                CryptoMode::Quantum | CryptoMode::QuantumSafe => {
                     // Simplified quantum benchmark - in reality would use ML-KEM
                     let keypair = ClassicalUserKeyPair::generate();
                     let public_key = keypair.public_keys().x25519_key;
@@ -321,14 +321,14 @@ impl CryptoBenchmark {
                     let _ = ClassicalDigitalSignature::verify(&public_keys.verifying_key, test_data, &signature)?;
                     verification_durations.push(start.elapsed());
                 }
-                CryptoMode::Hybrid | CryptoMode::Quantum => {
+                CryptoMode::Hybrid | CryptoMode::Quantum | CryptoMode::QuantumSafe => {
                     // For benchmarking, use classical signing with appropriate overhead estimates
                     let keypair = ClassicalUserKeyPair::generate();
                     let public_keys = keypair.public_keys();
                     
                     let overhead_multiplier = match mode {
                         CryptoMode::Hybrid => 2.0, // Hybrid does both classical and PQ
-                        CryptoMode::Quantum => 1.5, // PQ-only can be faster than hybrid
+                        CryptoMode::Quantum | CryptoMode::QuantumSafe => 1.5, // PQ-only can be faster than hybrid
                         _ => 1.0,
                     };
                     
@@ -369,7 +369,7 @@ impl CryptoBenchmark {
             let overhead_factor = match mode {
                 CryptoMode::Classical => 1.0,
                 CryptoMode::Hybrid => 1.8,    // From config.rs
-                CryptoMode::Quantum => 1.4,   // From config.rs
+                CryptoMode::Quantum | CryptoMode::QuantumSafe => 1.4,   // From config.rs
             };
             
             // Simulate creation time
@@ -395,7 +395,7 @@ impl CryptoBenchmark {
         let (keypair_size, public_key_size, signature_size) = match mode {
             CryptoMode::Classical => (64, 32, 64),           // Ed25519 + X25519 sizes
             CryptoMode::Hybrid => (1600, 800, 3000),         // Classical + ML-KEM + ML-DSA
-            CryptoMode::Quantum => (1200, 600, 2000),        // ML-KEM + ML-DSA only
+            CryptoMode::Quantum | CryptoMode::QuantumSafe => (1200, 600, 2000),        // ML-KEM + ML-DSA only
         };
         
         let base_memory = 1024; // Base memory usage in KB
@@ -505,7 +505,7 @@ impl CryptoBenchmark {
                     match mode {
                         CryptoMode::Classical => { let _ = ClassicalUserKeyPair::generate(); }
                         CryptoMode::Hybrid => { let _ = HybridUserKeyPair::generate(); }
-                        CryptoMode::Quantum => { let _ = PostQuantumUserKeyPair::generate(); }
+                        CryptoMode::Quantum | CryptoMode::QuantumSafe => { let _ = PostQuantumUserKeyPair::generate(); }
                     }
                 }
                 "encrypt" => {

@@ -51,6 +51,26 @@ path = "examples/session6_validation.rs"
 name = "session7_validation"
 path = "examples/session7_validation.rs"
 
+[[example]]
+name = "session9_validation"
+path = "examples/session9_validation.rs"
+
+[[example]]
+name = "session10_validation"
+path = "examples/session10_validation.rs"
+
+[[example]]
+name = "session11_validation"
+path = "examples/session11_validation.rs"
+
+[[example]]
+name = "session12_validation"
+path = "examples/session12_validation.rs"
+
+[[example]]
+name = "session12_basic_validation"
+path = "examples/session12_basic_validation.rs"
+
 [dependencies]
 # Classical crypto primitives - Updated for compatibility
 chacha20poly1305 = "0.10"
@@ -92,5 +112,61 @@ lru = "0.12"
 # Session 8: Configuration parsing
 toml = "0.8"
 uuid = { version = "1.0", features = ["v4", "serde"] }
+log = "0.4"                         # Logging support
 env_logger = "0.10"
 async-trait = "0.1"
+
+# Session 9: Media and file attachment support
+blake2 = "0.10"                     # For file hashing and integrity
+bytes = "1.5"                       # For efficient binary data handling
+futures = "0.3"                     # For async stream processing
+tokio-stream = "0.1"                # For streaming file transfers
+mime = "0.3"                        # For MIME type detection
+mime_guess = "2.0"                  # For MIME type guessing from extensions
+tempfile = "3.8"                    # For temporary file handling
+walkdir = "2.4"                     # For directory traversal (if needed)
+aws-sdk-s3 = { version = "1.0", optional = true }  # For S3 storage backend
+
+# Session 10: Media Processing & Optimization
+image = { version = "0.24", features = ["jpeg", "png", "gif", "webp", "tiff"] }  # Image processing
+ffmpeg-next = { version = "6.0", optional = true }  # Video processing
+tokio-util = "0.7"                  # Codec utilities for streaming
+pin-project-lite = "0.2"            # For custom streams
+kamadak-exif = { version = "0.5", optional = true }  # EXIF data extraction
+
+# Session 11: Advanced Media Features
+sha3 = "0.10"                       # Additional hash algorithm support
+
+# Session 12: Security & Compliance dependencies
+regex = "1.10"                      # Regular expressions for pattern matching
+md5 = "0.7"                         # MD5 hashing for compatibility
+serde_with = "3.12.0"
+hmac = "0.12"                       # HMAC for authentication tags
+
+[features]
+default = ["local-storage", "image-processing", "session11-basic"]
+local-storage = []                   # Local filesystem storage
+s3-storage = ["aws-sdk-s3"]           # AWS S3 storage backend
+distributed-storage = []             # Distributed storage (placeholder)
+image-processing = []                # Image thumbnails and optimization
+video-processing = ["ffmpeg-next"]   # Video processing and thumbnails
+exif-processing = ["kamadak-exif"]   # EXIF metadata extraction
+media-full = ["image-processing", "video-processing", "exif-processing"]  # All media features
+
+# Session 11: Advanced Media Features
+session11-basic = []                 # Basic Session 11 features (chunking, deduplication)
+session11-streaming = []             # Real-time streaming capabilities
+session11-collaboration = []         # Collaborative media features
+session11-compatibility = []         # Cross-platform compatibility
+session11-full = ["session11-basic", "session11-streaming", "session11-collaboration", "session11-compatibility"]
+
+# Session 12: Security & Compliance Features
+compliance-basic = []                # Basic compliance features
+compliance-gdpr = []                 # GDPR compliance
+compliance-hipaa = []                # HIPAA compliance
+compliance-full = ["compliance-basic", "compliance-gdpr", "compliance-hipaa"]
+
+# Additional streaming and processing features
+streaming = ["session11-streaming"]  # Real-time media streaming
+collaboration = ["session11-collaboration"]  # Collaborative features
+full-media = ["media-full", "streaming", "collaboration"]  # All media capabilities

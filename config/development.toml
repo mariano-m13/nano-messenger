@@ -122,3 +122,55 @@ retention_days = 7
 backup_location = "./backups"
 encryption_enabled = false
 compression_enabled = false
+
+# Session 9: Media and File Attachment Configuration (Development)
+[media]
+enabled = true
+max_file_size_mb = 50                 # Smaller size for development
+allowed_mime_types = ["image/*", "video/*", "application/pdf", "text/*", "application/json"]
+storage_backend = "local"
+storage_path = "./dev-files"          # Local directory for development
+
+[media.encryption]
+default_crypto_mode = "classical"     # Classical for faster development
+require_post_quantum_for_files = false
+chunk_size_mb = 5                     # Smaller chunks for development
+
+[media.security]
+virus_scanning_enabled = false        # Disabled for development
+content_type_validation = true
+file_extension_validation = true
+quarantine_suspicious_files = false
+
+[media.processing]
+enabled = true
+max_processing_time_seconds = 180
+concurrent_processing_jobs = 2
+temp_directory = "./tmp"
+
+[media.processing.images]
+generate_thumbnails = true
+thumbnail_sizes = [150, 300]
+optimization_enabled = true
+target_quality = 75
+strip_exif_data = false  # Keep EXIF for development
+supported_formats = ["jpeg", "png", "webp"]
+max_dimension = 2048
+progressive_jpeg = true
+
+[media.processing.video]
+generate_thumbnails = true
+thumbnail_timestamp_seconds = 3.0
+compression_enabled = false  # Faster development
+max_video_length_seconds = 900  # 15 minutes
+supported_codecs = ["h264", "vp9"]
+target_bitrate_kbps = 1000
+max_resolution = [1280, 720]
+
+[media.processing.progressive]
+chunk_size_kb = 32
+quality_levels = ["thumbnail", "preview", "standard"]
+adaptive_bitrate = true
+preload_next_quality = false  # Disabled for development
+cache_size_mb = 50
+bandwidth_detection_interval_ms = 10000

@@ -12,6 +12,8 @@ pub enum CryptoMode {
     Hybrid,
     /// Pure post-quantum cryptography
     Quantum,
+    /// Alias for Quantum mode (for backward compatibility)
+    QuantumSafe,
 }
 
 impl Default for CryptoMode {
@@ -28,6 +30,7 @@ impl FromStr for CryptoMode {
             "classical" | "classic" => Ok(CryptoMode::Classical),
             "hybrid" => Ok(CryptoMode::Hybrid),
             "quantum" | "postquantum" | "post-quantum" | "pq" => Ok(CryptoMode::Quantum),
+            "quantumsafe" | "quantum-safe" | "quantum_safe" => Ok(CryptoMode::QuantumSafe),
             _ => Err(NanoError::Crypto(format!(
                 "Invalid crypto mode: {}. Valid options: classical, hybrid, quantum",
                 s
@@ -42,6 +45,7 @@ impl std::fmt::Display for CryptoMode {
             CryptoMode::Classical => write!(f, "classical"),
             CryptoMode::Hybrid => write!(f, "hybrid"),
             CryptoMode::Quantum => write!(f, "quantum"),
+            CryptoMode::QuantumSafe => write!(f, "quantum-safe"),
         }
     }
 }
@@ -49,7 +53,7 @@ impl std::fmt::Display for CryptoMode {
 impl CryptoMode {
     /// Returns all available crypto modes
     pub fn all() -> &'static [CryptoMode] {
-        &[CryptoMode::Classical, CryptoMode::Hybrid, CryptoMode::Quantum]
+        &[CryptoMode::Classical, CryptoMode::Hybrid, CryptoMode::Quantum, CryptoMode::QuantumSafe]
     }
 
     /// Returns a human-readable description of the crypto mode
@@ -61,7 +65,7 @@ impl CryptoMode {
             CryptoMode::Hybrid => {
                 "Hybrid security combining classical algorithms with post-quantum ML-KEM-768 and ML-DSA"
             }
-            CryptoMode::Quantum => {
+            CryptoMode::Quantum | CryptoMode::QuantumSafe => {
                 "Pure post-quantum cryptography using ML-KEM-768 and ML-DSA algorithms"
             }
         }
@@ -72,7 +76,7 @@ impl CryptoMode {
         match self {
             CryptoMode::Classical => 1,  // Generation 1: Classical cryptography
             CryptoMode::Hybrid => 2,     // Generation 2: Transitional (classical + PQ)
-            CryptoMode::Quantum => 3,    // Generation 3: Pure post-quantum
+            CryptoMode::Quantum | CryptoMode::QuantumSafe => 3,    // Generation 3: Pure post-quantum
         }
     }
 
@@ -81,13 +85,13 @@ impl CryptoMode {
         match self {
             CryptoMode::Classical => "Strong against classical attacks, vulnerable to quantum attacks",
             CryptoMode::Hybrid => "Strong against both classical and quantum attacks (best security)",
-            CryptoMode::Quantum => "Strong against quantum attacks, standard classical security",
+            CryptoMode::Quantum | CryptoMode::QuantumSafe => "Strong against quantum attacks, standard classical security",
         }
     }
 
     /// Returns whether this mode is quantum-resistant
     pub fn is_quantum_resistant(&self) -> bool {
-        matches!(self, CryptoMode::Hybrid | CryptoMode::Quantum)
+        matches!(self, CryptoMode::Hybrid | CryptoMode::Quantum | CryptoMode::QuantumSafe)
     }
 
     /// Returns the relative performance cost (1.0 = classical baseline)
@@ -95,7 +99,7 @@ impl CryptoMode {
         match self {
             CryptoMode::Classical => 1.0,
             CryptoMode::Hybrid => 1.8,    // Hybrid is slower due to dual operations
-            CryptoMode::Quantum => 1.4,   // Pure PQ is faster than hybrid but slower than classical
+            CryptoMode::Quantum | CryptoMode::QuantumSafe => 1.4,   // Pure PQ is faster than hybrid but slower than classical
         }
     }
 
@@ -104,7 +108,7 @@ impl CryptoMode {
         match self {
             CryptoMode::Classical => 0,     // Baseline
             CryptoMode::Hybrid => 2048,     // Additional PQ key material
-            CryptoMode::Quantum => 1536,    // PQ-only overhead
+            CryptoMode::Quantum | CryptoMode::QuantumSafe => 1536,    // PQ-only overhead
         }
     }
 
@@ -115,14 +119,22 @@ impl CryptoMode {
             (CryptoMode::Classical, CryptoMode::Classical) => true,
             (CryptoMode::Hybrid, CryptoMode::Hybrid) => true,
             (CryptoMode::Quantum, CryptoMode::Quantum) => true,
+            (CryptoMode::QuantumSafe, CryptoMode::QuantumSafe) => true,
+            // Quantum and QuantumSafe are equivalent
+            (CryptoMode::Quantum, CryptoMode::QuantumSafe) => true,
+            (CryptoMode::QuantumSafe, CryptoMode::Quantum) => true,
             // Always allow upgrading to higher security levels
             (CryptoMode::Classical, CryptoMode::Hybrid) => true,
             (CryptoMode::Classical, CryptoMode::Quantum) => true,
+            (CryptoMode::Classical, CryptoMode::QuantumSafe) => true,
             (CryptoMode::Hybrid, CryptoMode::Quantum) => true,
+            (CryptoMode::Hybrid, CryptoMode::QuantumSafe) => true,
             // Don't allow downgrades (going to lower security levels)
             (CryptoMode::Hybrid, CryptoMode::Classical) => false,
             (CryptoMode::Quantum, CryptoMode::Classical) => false,
             (CryptoMode::Quantum, CryptoMode::Hybrid) => false,
+            (CryptoMode::QuantumSafe, CryptoMode::Classical) => false,
+            (CryptoMode::QuantumSafe, CryptoMode::Hybrid) => false,
         }
     }
 

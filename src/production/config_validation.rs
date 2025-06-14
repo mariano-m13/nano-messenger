@@ -4,6 +4,7 @@
 //! deployments, ensuring all settings are valid, secure, and compliant with
 //! organizational policies before the system starts.
 
+
 use serde::{Deserialize, Serialize};
 // use std::collections::HashMap; // Unused
 use std::fmt;
@@ -138,7 +139,7 @@ pub struct AlertThresholds {
     pub memory_usage_percent: f64,
     pub disk_usage_percent: f64,
     pub error_rate_percent: f64,
-    pub response_time_ms: u64,
+    pub response_time_ms: f64, // Fixed: Changed from u64 to f64 for consistency
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -920,7 +921,9 @@ pub fn load_and_validate_config(config_path: &std::path::Path, environment: Envi
             .map(|e| e.to_string())
             .collect();
         
-        return Err(format!("Configuration validation failed:\n{}", error_messages.join("\n")).into());
+        return Err(format!("Configuration validation failed:
+{}", error_messages.join("
+")).into());
     }
     
     // Print warnings and recommendations
@@ -1020,7 +1023,7 @@ mod tests {
                     memory_usage_percent: 85.0,
                     disk_usage_percent: 90.0,
                     error_rate_percent: 1.0,
-                    response_time_ms: 1000,
+                    response_time_ms: 1000.0, // Fixed: Use f64 instead of u64
                 },
                 external_monitoring: None,
             },

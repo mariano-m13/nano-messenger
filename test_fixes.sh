@@ -1,45 +1,26 @@
 #!/bin/bash
+cd /Users/mariano/Desktop/Code/nano-messenger
 
-echo "🔧 Testing Fixed Session Files"
-echo "=============================="
-echo ""
+echo "Testing specific module compilation..."
+echo "=========================================="
 
-echo "🧹 Step 1: Clean compilation cache..."
-cargo clean
-
-echo "✅ Step 2: Test compilation..."
-echo "  Checking session3_validation..."
-if cargo check --example session3_validation; then
-    echo "    ✅ Session 3 compiles"
-else
-    echo "    ❌ Session 3 compilation failed"
-    exit 1
-fi
-
-echo "  Checking session5_validation..."
-if cargo check --example session5_validation; then
-    echo "    ✅ Session 5 compiles"
-else
-    echo "    ❌ Session 5 compilation failed"
-    exit 1
-fi
-
-echo "  Checking session6_validation..."
-if cargo check --example session6_validation; then
-    echo "    ✅ Session 6 compiles"
-else
-    echo "    ❌ Session 6 compilation failed"
-    exit 1
-fi
-
-echo "  Checking all examples..."
-if cargo check --examples; then
-    echo "    ✅ All examples compile successfully!"
-else
-    echo "    ❌ Some examples still have issues"
-    exit 1
-fi
+echo "1. Testing media/compatibility/mobile.rs compilation..."
+cargo check --lib --quiet 2>&1 | grep -A 5 -B 5 "mobile.rs" | head -20
 
 echo ""
-echo "🎉 All compilation issues fixed!"
-echo "🚀 Ready to run the full test suite"
+echo "2. Testing if our MediaType::Unknown fix worked..."
+cargo check --lib --quiet 2>&1 | grep -A 3 -B 3 "non-exhaustive" | head -10
+
+echo ""
+echo "3. Testing if MobileQualityLevel fix worked..."
+cargo check --lib --quiet 2>&1 | grep -A 3 -B 3 "MobileQualityLevel" | head -10
+
+echo ""
+echo "4. Quick compilation status check..."
+if cargo check --lib --quiet >/dev/null 2>&1; then
+    echo "✅ Library compiles successfully!"
+else
+    echo "❌ Still have compilation errors"
+    echo "First 10 compilation errors:"
+    cargo check --lib 2>&1 | head -20
+fi

@@ -4,6 +4,7 @@
 //! compliance including GDPR, HIPAA, SOX, and other data protection regulations.
 //! Features tamper-evident logs, structured events, and automated compliance reporting.
 
+
 use crate::crypto::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -913,7 +914,7 @@ mod tests {
     
     #[test]
     fn test_audit_log_creation() {
-        let mut audit_log = TamperEvidentAuditLog::new("test-key".to_string());
+        let audit_log = TamperEvidentAuditLog::new("test-key".to_string());
         assert_eq!(audit_log.sequence_number, 0);
         assert!(audit_log.log_entries.is_empty());
     }

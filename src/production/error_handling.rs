@@ -4,6 +4,7 @@
 //! including structured error types, error recovery mechanisms, and observability
 //! integration for monitoring and debugging in production environments.
 
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;

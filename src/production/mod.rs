@@ -1,8 +1,10 @@
-//! Production Module - Session 8 Production Hardening
-//! 
-//! This module provides comprehensive production-ready capabilities for the
-//! Quantum-Resistant Nano-Messenger, including error handling, audit logging,
-//! configuration validation, migration tools, and health monitoring.
+// Production Module - Session 8 Production Hardening
+// 
+// This module provides comprehensive production-ready capabilities for the
+// Quantum-Resistant Nano-Messenger, including error handling, audit logging,
+// configuration validation, migration tools, and health monitoring.
+
+use std::collections::HashMap;
 
 pub mod error_handling;
 pub mod audit_logging;
@@ -252,8 +254,8 @@ impl ProductionManager {
                 disk_usage_critical: self.config.monitoring.alert_thresholds.disk_usage_percent,
                 error_rate_warning: self.config.monitoring.alert_thresholds.error_rate_percent * 0.5,
                 error_rate_critical: self.config.monitoring.alert_thresholds.error_rate_percent,
-                response_time_warning_ms: self.config.monitoring.alert_thresholds.response_time_ms as f64 * 0.8,
-                response_time_critical_ms: self.config.monitoring.alert_thresholds.response_time_ms as f64,
+                response_time_warning_ms: self.config.monitoring.alert_thresholds.response_time_ms * 0.8,
+                response_time_critical_ms: self.config.monitoring.alert_thresholds.response_time_ms,
                 connection_count_warning: (self.config.server.max_connections as f64 * 0.8) as u32,
                 connection_count_critical: self.config.server.max_connections,
             },
@@ -702,7 +704,7 @@ mod tests {
                     memory_usage_percent: 85.0,
                     disk_usage_percent: 90.0,
                     error_rate_percent: 1.0,
-                    response_time_ms: 1000,
+                    response_time_ms: 1000.0, // Fixed: Use f64 instead of u64
                 },
                 external_monitoring: None,
             },

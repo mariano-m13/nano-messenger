@@ -1,0 +1,1 @@
+chmod +x /Users/mariano/Desktop/Code/nano-messenger/complete_fix.sh

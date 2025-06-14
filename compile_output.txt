@@ -1,0 +1,11 @@
+    Checking nano-messenger v0.1.0 (/Users/mariano/Desktop/Code/nano-messenger)
+warning: unused variable: `recipient_keypair`
+   --> src/media/transfer.rs:467:9
+    |
+467 |         recipient_keypair: &UnifiedKeyPair,
+    |         ^^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_recipient_keypair`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: `nano-messenger` (lib) generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.49s

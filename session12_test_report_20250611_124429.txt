@@ -1,0 +1,28 @@
+Session 12 Test Report - Security & Compliance for Media
+========================================================
+Generated: Wed Jun 11 12:44:29 CEST 2025
+
+Test Statistics:
+Total: 15, Passed: 0, Failed: 15
+Success Rate: 0%
+
+Detailed Results:
+❌ Session 12 Compilation - FAILED (12s)
+❌ Session 12 Full Validation - FAILED (13s)
+❌ Security Scanner Tests - FAILED (14s)
+❌ Forensics Tests - FAILED (14s)
+❌ Access Control Tests - FAILED (13s)
+❌ E2E Encryption Tests - FAILED (12s)
+❌ GDPR Compliance Tests - FAILED (14s)
+❌ HIPAA Compliance Tests - FAILED (13s)
+❌ Audit System Tests - FAILED (12s)
+❌ Multi-Regulation Tests - FAILED (15s)
+❌ Performance Tests - FAILED (12s)
+❌ Integration Tests - FAILED (13s)
+❌ Concurrent Operations - FAILED (13s)
+❌ Large File Handling - FAILED (13s)
+❌ Real-time Compliance - FAILED (14s)
+
+System Information:
+Rust Version: rustc 1.87.0 (17067e9ac 2025-05-09) (Homebrew)
+Platform: Darwin arm64

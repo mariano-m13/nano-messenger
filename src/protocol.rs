@@ -292,6 +292,7 @@ impl MessagePayload {
                 let signature = PostQuantumDigitalSignature::sign(&kp.private_key, &data);
                 let sig_bytes = PostQuantumDigitalSignature::signature_to_bytes(&signature);
                 self.sig = general_purpose::STANDARD.encode(&sig_bytes);
+                // Use Quantum as the canonical mode for PostQuantum keys
                 self.crypto_mode = Some(CryptoMode::Quantum);
             }
         }
@@ -333,7 +334,7 @@ impl MessagePayload {
         } else {
             // Infer from public key format for backward compatibility
             if self.from_pubkey.starts_with("pq-pubkey:") {
-                CryptoMode::Quantum
+                CryptoMode::Quantum // Use Quantum as canonical for post-quantum
             } else if self.from_pubkey.starts_with("hybrid-pubkey:") {
                 CryptoMode::Hybrid
             } else {
@@ -359,7 +360,7 @@ impl MessagePayload {
                 };
                 HybridDigitalSignature::verify(&verifying_key, &data, &signature)
             }
-            CryptoMode::Quantum => {
+            CryptoMode::Quantum | CryptoMode::QuantumSafe => {
                 let signature = PostQuantumDigitalSignature::signature_from_bytes(&sig_bytes)?;
                 let public_key = PostQuantumUserPublicKeys::from_public_key_string(&self.from_pubkey)?;
                 PostQuantumDigitalSignature::verify(&public_key, &data, &signature)

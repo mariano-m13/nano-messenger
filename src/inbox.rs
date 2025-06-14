@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::crypto::{hash_sha256, derive_shared_secret, X25519PrivateKey, X25519PublicKey};
 
 /// Derives inbox ID for first contact messages

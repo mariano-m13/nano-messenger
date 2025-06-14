@@ -38,6 +38,9 @@ pub use hybrid::{
 // Re-export quantum-safe messaging (Session 3)
 pub use quantum_safe::QuantumSafeMessaging;
 
+// Type alias for quantum signatures
+pub type QuantumSignature = Vec<u8>;
+
 // Re-export performance optimization components (Session 6)
 pub use benchmarks::{
     CryptoBenchmark, CryptoBenchmarkResults, BenchmarkMetrics, 
@@ -121,7 +124,7 @@ impl CryptoInterface {
         match Self::current_mode() {
             CryptoMode::Classical => Ok(UnifiedKeyPair::Classical(ClassicalUserKeyPair::generate())),
             CryptoMode::Hybrid => Ok(UnifiedKeyPair::Hybrid(HybridUserKeyPair::generate())),
-            CryptoMode::Quantum => Ok(UnifiedKeyPair::PostQuantum(PostQuantumUserKeyPair::generate())),
+            CryptoMode::Quantum | CryptoMode::QuantumSafe => Ok(UnifiedKeyPair::PostQuantum(PostQuantumUserKeyPair::generate())),
         }
     }
     
@@ -170,7 +173,7 @@ impl UnifiedKeyPair {
         match self {
             UnifiedKeyPair::Classical(_) => CryptoMode::Classical,
             UnifiedKeyPair::Hybrid(_) => CryptoMode::Hybrid,
-            UnifiedKeyPair::PostQuantum(_) => CryptoMode::Quantum,
+            UnifiedKeyPair::PostQuantum(_) => CryptoMode::Quantum, // Could be Quantum or QuantumSafe
         }
     }
     
@@ -213,7 +216,7 @@ impl UnifiedPublicKeys {
         match self {
             UnifiedPublicKeys::Classical(_) => CryptoMode::Classical,
             UnifiedPublicKeys::Hybrid(_) => CryptoMode::Hybrid,
-            UnifiedPublicKeys::PostQuantum(_) => CryptoMode::Quantum,
+            UnifiedPublicKeys::PostQuantum(_) => CryptoMode::Quantum, // Could be Quantum or QuantumSafe
         }
     }
     

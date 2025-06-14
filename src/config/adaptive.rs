@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::crypto::CryptoMode;
 use serde::{Serialize, Deserialize};
 use std::time::{Duration, Instant};
@@ -461,7 +462,7 @@ impl AdaptiveModeSelector {
         match mode {
             CryptoMode::Classical => (1.0, 1.0, 1.0), // Baseline
             CryptoMode::Hybrid => (1.8, 1.6, 1.2),    // Higher impact
-            CryptoMode::Quantum => (1.4, 1.3, 1.1),   // Moderate impact
+            CryptoMode::Quantum | CryptoMode::QuantumSafe => (1.4, 1.3, 1.1),   // Moderate impact
         }
     }
 

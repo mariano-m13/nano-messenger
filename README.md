@@ -332,7 +332,14 @@ cargo test security::
 
 # Performance benchmarks
 cargo bench
+
+# Test Session 11 (Large File Chunking System)
+cargo test test_session_11_basic      # Quick test
+cargo test test_session_11_comprehensive  # Full test suite
+cargo run --bin session11_cli test quick  # Interactive testing
 ```
+
+For comprehensive Session 11 testing, see **[Session 11 Testing Guide](docs/SESSION_11_TESTING.md)**.
 
 ### Contributing
 
@@ -349,6 +356,7 @@ cargo bench
 | **[Deployment Guide](docs/deployment-guide.md)** | Production deployment, configuration, operations |
 | **[Performance Tuning](docs/performance-tuning.md)** | Optimization strategies, benchmarks, scaling |
 | **[Compliance Features](docs/compliance-features.md)** | GDPR, HIPAA, SOX compliance implementation |
+| **[Session 11 Testing](docs/SESSION_11_TESTING.md)** | Large File Chunking System testing guide |
 
 ## 🔮 Roadmap
 

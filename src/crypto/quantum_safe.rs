@@ -117,6 +117,9 @@ impl QuantumSafeMessaging {
             (CryptoMode::Quantum, UnifiedPublicKeys::PostQuantum(keys)) => {
                 PostQuantumAsymmetricEncryption::encrypt(&keys.public_key, payload_bytes)
             }
+            (CryptoMode::QuantumSafe, UnifiedPublicKeys::PostQuantum(keys)) => {
+                PostQuantumAsymmetricEncryption::encrypt(&keys.public_key, payload_bytes)
+            }
             // Handle cross-mode compatibility
             (CryptoMode::Classical, UnifiedPublicKeys::Hybrid(keys)) => {
                 // Use only the classical part of hybrid keys
@@ -137,7 +140,16 @@ impl QuantumSafeMessaging {
                     "Cannot encrypt post-quantum message to classical-only recipient".to_string(),
                 ))
             }
+            (CryptoMode::QuantumSafe, UnifiedPublicKeys::Classical(_)) => {
+                Err(NanoError::Crypto(
+                    "Cannot encrypt quantum-safe message to classical-only recipient".to_string(),
+                ))
+            }
             (CryptoMode::Quantum, UnifiedPublicKeys::Hybrid(keys)) => {
+                // Use only the post-quantum part of hybrid keys
+                PostQuantumAsymmetricEncryption::encrypt(&keys.post_quantum.public_key, payload_bytes)
+            }
+            (CryptoMode::QuantumSafe, UnifiedPublicKeys::Hybrid(keys)) => {
                 // Use only the post-quantum part of hybrid keys
                 PostQuantumAsymmetricEncryption::encrypt(&keys.post_quantum.public_key, payload_bytes)
             }
@@ -178,6 +190,12 @@ impl QuantumSafeMessaging {
                     encrypted_payload,
                 )
             }
+            (CryptoMode::QuantumSafe, UnifiedKeyPair::PostQuantum(kp)) => {
+                PostQuantumAsymmetricEncryption::decrypt_pq_direct(
+                    &kp.private_key,
+                    encrypted_payload,
+                )
+            }
             // Handle cross-mode compatibility for decryption
             (CryptoMode::Classical, UnifiedKeyPair::Hybrid(kp)) => {
                 // Try classical decryption with the classical part
@@ -187,6 +205,13 @@ impl QuantumSafeMessaging {
                 )
             }
             (CryptoMode::Quantum, UnifiedKeyPair::Hybrid(kp)) => {
+                // Try post-quantum decryption with the post-quantum part
+                PostQuantumAsymmetricEncryption::decrypt_pq_direct(
+                    &kp.post_quantum.private_key,
+                    encrypted_payload,
+                )
+            }
+            (CryptoMode::QuantumSafe, UnifiedKeyPair::Hybrid(kp)) => {
                 // Try post-quantum decryption with the post-quantum part
                 PostQuantumAsymmetricEncryption::decrypt_pq_direct(
                     &kp.post_quantum.private_key,
@@ -232,11 +257,16 @@ impl QuantumSafeMessaging {
         match (sender_mode, receiver_mode) {
             // Same modes are always compatible
             (a, b) if a == b => true,
+            // Quantum and QuantumSafe are equivalent
+            (CryptoMode::Quantum, CryptoMode::QuantumSafe) => true,
+            (CryptoMode::QuantumSafe, CryptoMode::Quantum) => true,
             // Classical can communicate with any mode (receiver can downgrade)
             (CryptoMode::Classical, _) => true,
-            // Hybrid can communicate with quantum (use quantum part)
+            // Hybrid can communicate with quantum modes (use quantum part)
             (CryptoMode::Hybrid, CryptoMode::Quantum) => true,
             (CryptoMode::Quantum, CryptoMode::Hybrid) => true,
+            (CryptoMode::Hybrid, CryptoMode::QuantumSafe) => true,
+            (CryptoMode::QuantumSafe, CryptoMode::Hybrid) => true,
             // Other combinations require explicit support
             _ => false,
         }
@@ -287,6 +317,10 @@ mod tests {
         assert!(QuantumSafeMessaging::modes_compatible(CryptoMode::Classical, CryptoMode::Hybrid));
         assert!(QuantumSafeMessaging::modes_compatible(CryptoMode::Hybrid, CryptoMode::Quantum));
         assert!(QuantumSafeMessaging::modes_compatible(CryptoMode::Quantum, CryptoMode::Hybrid));
+        assert!(QuantumSafeMessaging::modes_compatible(CryptoMode::Quantum, CryptoMode::QuantumSafe));
+        assert!(QuantumSafeMessaging::modes_compatible(CryptoMode::QuantumSafe, CryptoMode::Quantum));
+        assert!(QuantumSafeMessaging::modes_compatible(CryptoMode::Hybrid, CryptoMode::QuantumSafe));
+        assert!(QuantumSafeMessaging::modes_compatible(CryptoMode::QuantumSafe, CryptoMode::Hybrid));
     }
 
     #[test]
