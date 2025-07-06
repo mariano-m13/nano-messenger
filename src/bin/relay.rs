@@ -158,6 +158,7 @@ impl PolicyStats {
             CryptoMode::Classical => self.classical_messages += 1,
             CryptoMode::Hybrid => self.hybrid_messages += 1,
             CryptoMode::Quantum => self.quantum_messages += 1,
+            CryptoMode::QuantumSafe => self.quantum_messages += 1,
         }
     }
 }

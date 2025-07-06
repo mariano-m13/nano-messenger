@@ -1012,6 +1012,7 @@ fn show_security_configuration(config_dir: &PathBuf) -> Result<()> {
                      CryptoMode::Classical => "🔓",
                      CryptoMode::Hybrid => "🔐", 
                      CryptoMode::Quantum => "⚛️",
+                     CryptoMode::QuantumSafe => "🛡️⚛️",
                  },
                  mode,
                  mode.performance_cost(),

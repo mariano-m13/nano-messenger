@@ -200,7 +200,7 @@ fn output_text_result(result: &ValidationResult, strict_mode: bool) {
         80..=89 => println!("Security Level: 🟡 Good"),
         70..=79 => println!("Security Level: 🟠 Moderate"),
         60..=69 => println!("Security Level: 🔴 Poor"),
-        _ => println!("Security Level: ⚠️  Critical Issues"),
+        _ => println!("Security Level: ⚠️ Critical Issues"),
     }
     
     println!();
