@@ -164,7 +164,7 @@ fn output_json_result(result: &ValidationResult) {
     println!("  \"errors\": [");
     for (i, error) in result.errors.iter().enumerate() {
         let comma = if i < result.errors.len() - 1 { "," } else { "" };
-        println!("    \"{}\"{}",  error.to_string().replace("\"", "\\""), comma);
+        println!("    \"{}\"{}",  error.to_string().replace("\"", "\\\""), comma);
     }
     println!("  ],");
     
@@ -172,7 +172,7 @@ fn output_json_result(result: &ValidationResult) {
     println!("  \"warnings\": [");
     for (i, warning) in result.warnings.iter().enumerate() {
         let comma = if i < result.warnings.len() - 1 { "," } else { "" };
-        println!("    \"{}\"{}",  warning.replace("\"", "\\""), comma);
+        println!("    \"{}\"{}",  warning.replace("\"", "\\\""), comma);
     }
     println!("  ],");
     
@@ -180,7 +180,7 @@ fn output_json_result(result: &ValidationResult) {
     println!("  \"recommendations\": [");
     for (i, recommendation) in result.recommendations.iter().enumerate() {
         let comma = if i < result.recommendations.len() - 1 { "," } else { "" };
-        println!("    \"{}\"{}",  recommendation.replace("\"", "\\""), comma);
+        println!("    \"{}\"{}",  recommendation.replace("\"", "\\\""), comma);
     }
     println!("  ]");
     
